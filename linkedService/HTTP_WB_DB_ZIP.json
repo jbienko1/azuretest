@@ -1,0 +1,12 @@
+{
+	"name": "HTTP_WB_DB_ZIP",
+	"properties": {
+		"annotations": [],
+		"type": "HttpServer",
+		"typeProperties": {
+			"url": "http://databank.worldbank.org/data/download/DB_CSV.zip",
+			"enableServerCertificateValidation": false,
+			"authenticationType": "Anonymous"
+		}
+	}
+}
