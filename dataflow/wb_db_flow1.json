@@ -70,7 +70,15 @@
 				"     preCommands: [],",
 				"     postCommands: [],",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> wbdbtable"
+				"     skipDuplicateMapOutputs: true,",
+				"     mapColumn(",
+				"          CountryName = {Country Name},",
+				"          CountryCode = {Country Code},",
+				"          IndicatorName = {Indicator Name},",
+				"          IndicatorCode = {Indicator Code},",
+				"          year,",
+				"          value",
+				"     )) ~> wbdbtable"
 			]
 		}
 	}
