@@ -5,24 +5,72 @@
 		"typeProperties": {
 			"sources": [
 				{
-					"name": "source1"
-				},
-				{
-					"name": "source2"
+					"dataset": {
+						"referenceName": "WB_DB_DATA",
+						"type": "DatasetReference"
+					},
+					"name": "WBDBDATA"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "src_wb_db_data_avro",
+						"type": "DatasetReference"
+					},
+					"name": "wbdbtable"
+				}
+			],
 			"transformations": [
 				{
-					"name": "window1"
+					"name": "unpivotyrstocolumns"
 				}
 			],
 			"scriptLines": [
-				"source(allowSchemaDrift: true,",
-				"     validateSchema: false) ~> source1",
-				"source(allowSchemaDrift: true,",
-				"     validateSchema: false) ~> source2",
-				"source1 window() ~> window1"
+				"source(output(",
+				"          {Country Name} as string,",
+				"          {Country Code} as string,",
+				"          {Indicator Name} as string,",
+				"          {Indicator Code} as string,",
+				"          {2004} as string,",
+				"          {2005} as string,",
+				"          {2006} as string,",
+				"          {2007} as string,",
+				"          {2008} as string,",
+				"          {2009} as string,",
+				"          {2010} as string,",
+				"          {2011} as string,",
+				"          {2012} as string,",
+				"          {2013} as string,",
+				"          {2014} as string,",
+				"          {2015} as string,",
+				"          {2016} as string,",
+				"          {2017} as string,",
+				"          {2018} as string,",
+				"          {2019} as string,",
+				"          {2020} as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     limit: 100,",
+				"     ignoreNoFilesFound: false) ~> WBDBDATA",
+				"WBDBDATA unpivot(output(",
+				"          year as string,",
+				"          value as string",
+				"     ),",
+				"     ungroupBy({Country Name},",
+				"          {Country Code},",
+				"          {Indicator Name},",
+				"          {Indicator Code}),",
+				"     lateral: true,",
+				"     ignoreNullPivots: true) ~> unpivotyrstocolumns",
+				"unpivotyrstocolumns sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> wbdbtable"
 			]
 		}
 	}

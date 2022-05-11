@@ -1,0 +1,19 @@
+{
+	"name": "src_wb_db_data_avro",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Avro",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "src",
+				"fileSystem": "avro"
+			}
+		},
+		"schema": []
+	}
+}
