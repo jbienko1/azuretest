@@ -1,0 +1,23 @@
+{
+	"name": "WB_DB_zip_stored",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "WB_DB.zip",
+				"folderPath": "WB/DB",
+				"fileSystem": "dp203-datalakestorage-gen2-filesystem"
+			},
+			"compression": {
+				"type": "ZipDeflate",
+				"level": "Fastest"
+			}
+		}
+	}
+}
