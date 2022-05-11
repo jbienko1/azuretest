@@ -1,0 +1,18 @@
+{
+	"name": "unpacked",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "WB/DB/unpacked",
+				"fileSystem": "dp203-datalakestorage-gen2-filesystem"
+			}
+		}
+	}
+}
