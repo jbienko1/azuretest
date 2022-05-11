@@ -18,7 +18,14 @@
 						"referenceName": "src_wb_db_data_avro",
 						"type": "DatasetReference"
 					},
-					"name": "wbdbtable"
+					"name": "wbdb2avro"
+				},
+				{
+					"dataset": {
+						"referenceName": "wb_db_json",
+						"type": "DatasetReference"
+					},
+					"name": "wbdb2json"
 				}
 			],
 			"transformations": [
@@ -78,7 +85,22 @@
 				"          IndicatorCode = {Indicator Code},",
 				"          year,",
 				"          value",
-				"     )) ~> wbdbtable"
+				"     )) ~> wbdb2avro",
+				"unpivotyrstocolumns sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     mapColumn(",
+				"          {Country Name},",
+				"          {Country Code},",
+				"          {Indicator Name},",
+				"          {Indicator Code},",
+				"          Year = year,",
+				"          Value = value",
+				"     )) ~> wbdb2json"
 			]
 		}
 	}
