@@ -1,0 +1,20 @@
+{
+	"name": "powerquery1",
+	"properties": {
+		"type": "WranglingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"name": "WB_DB_DATA",
+					"script": "source(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~>  WB_DB_DATA",
+					"dataset": {
+						"referenceName": "WB_DB_DATA",
+						"type": "DatasetReference"
+					}
+				}
+			],
+			"script": "section Section1;\r\nshared WB_DB_DATA = let AdfDoc = AzureStorage.DataLakeContents(\"https://dp203datalakegen2jb.dfs.core.windows.net/dp203-datalakestorage-gen2-filesystem/WB/DB/unpacked/WB_DB.zip/DBData.csv\"),Csv = Csv.Document(AdfDoc, [Delimiter = \",\", Encoding = TextEncoding.Utf8, QuoteStyle = QuoteStyle.Csv]), PromotedHeaders = Table.PromoteHeaders(Csv, [PromoteAllScalars = true]) in  PromotedHeaders;\r\nshared UserQuery = let Source = #\"WB_DB_DATA\" in Source;\r\n",
+			"documentLocale": "en-us"
+		}
+	}
+}
