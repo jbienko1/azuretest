@@ -1,5 +1,5 @@
 {
-	"name": "dataflow1",
+	"name": "wb_db_flow1",
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {

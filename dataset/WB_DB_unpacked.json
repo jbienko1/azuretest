@@ -1,5 +1,5 @@
 {
-	"name": "unpacked",
+	"name": "WB_DB_unpacked",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "AzureDataLakeStorage1",
