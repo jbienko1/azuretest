@@ -133,6 +133,12 @@
 				}
 			}
 		],
+		"parameters": {
+			"test_parameter": {
+				"type": "string",
+				"defaultValue": "PL"
+			}
+		},
 		"annotations": []
 	}
 }
