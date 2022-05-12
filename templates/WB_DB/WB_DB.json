@@ -1,0 +1,509 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name"
+		},
+		"HTTP_WB_DB_ZIP": {
+			"type": "string"
+		},
+		"AzureDataLakeStorage1": {
+			"type": "string"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/WB_DB')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Download WB DB zip file",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "WB_DB_ZIP",
+								"type": "DatasetReference"
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "WB_DB_zip_stored",
+								"type": "DatasetReference"
+							}
+						]
+					},
+					{
+						"name": "Unpack WB DB",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Download WB DB zip file",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"deleteFilesAfterCompletion": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings",
+									"compressionProperties": {
+										"type": "ZipDeflateReadSettings"
+									}
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "WB_DB_zip_stored",
+								"type": "DatasetReference"
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "WB_DB_unpacked",
+								"type": "DatasetReference"
+							}
+						]
+					},
+					{
+						"name": "Transform and store WB DB",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "Unpack WB DB",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "wb_db_flow1",
+								"type": "DataFlowReference"
+							},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"parameters": {
+					"test_parameter": {
+						"type": "string",
+						"defaultValue": "PL"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/WB_DB_ZIP')]",
+				"[concat(variables('factoryId'), '/datasets/WB_DB_zip_stored')]",
+				"[concat(variables('factoryId'), '/datasets/WB_DB_unpacked')]",
+				"[concat(variables('factoryId'), '/dataflows/wb_db_flow1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/WB_DB_ZIP')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('HTTP_WB_DB_ZIP')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "HttpServerLocation"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/WB_DB_zip_stored')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('AzureDataLakeStorage1')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "WB_DB.zip",
+						"folderPath": "WB/DB",
+						"fileSystem": "dp203-datalakestorage-gen2-filesystem"
+					},
+					"compression": {
+						"type": "ZipDeflate",
+						"level": "Fastest"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/WB_DB_unpacked')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('AzureDataLakeStorage1')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "WB/DB/unpacked",
+						"fileSystem": "dp203-datalakestorage-gen2-filesystem"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/wb_db_flow1')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "WB_DB_DATA",
+								"type": "DatasetReference"
+							},
+							"name": "WBDBDATA"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "src_wb_db_data_avro",
+								"type": "DatasetReference"
+							},
+							"name": "wbdb2avro"
+						},
+						{
+							"dataset": {
+								"referenceName": "wb_db_json",
+								"type": "DatasetReference"
+							},
+							"name": "wbdb2json"
+						}
+					],
+					"transformations": [
+						{
+							"name": "unpivotyrstocolumns"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          {Country Name} as string,",
+						"          {Country Code} as string,",
+						"          {Indicator Name} as string,",
+						"          {Indicator Code} as string,",
+						"          {2004} as string,",
+						"          {2005} as string,",
+						"          {2006} as string,",
+						"          {2007} as string,",
+						"          {2008} as string,",
+						"          {2009} as string,",
+						"          {2010} as string,",
+						"          {2011} as string,",
+						"          {2012} as string,",
+						"          {2013} as string,",
+						"          {2014} as string,",
+						"          {2015} as string,",
+						"          {2016} as string,",
+						"          {2017} as string,",
+						"          {2018} as string,",
+						"          {2019} as string,",
+						"          {2020} as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     limit: 100,",
+						"     ignoreNoFilesFound: false) ~> WBDBDATA",
+						"WBDBDATA unpivot(output(",
+						"          year as string,",
+						"          value as string",
+						"     ),",
+						"     ungroupBy({Country Name},",
+						"          {Country Code},",
+						"          {Indicator Name},",
+						"          {Indicator Code}),",
+						"     lateral: true,",
+						"     ignoreNullPivots: true) ~> unpivotyrstocolumns",
+						"unpivotyrstocolumns sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     mapColumn(",
+						"          CountryName = {Country Name},",
+						"          CountryCode = {Country Code},",
+						"          IndicatorName = {Indicator Name},",
+						"          IndicatorCode = {Indicator Code},",
+						"          year,",
+						"          value",
+						"     )) ~> wbdb2avro",
+						"unpivotyrstocolumns sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     mapColumn(",
+						"          {Country Name},",
+						"          {Country Code},",
+						"          {Indicator Name},",
+						"          {Indicator Code},",
+						"          Year = year,",
+						"          Value = value",
+						"     )) ~> wbdb2json"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/WB_DB_DATA')]",
+				"[concat(variables('factoryId'), '/datasets/src_wb_db_data_avro')]",
+				"[concat(variables('factoryId'), '/datasets/wb_db_json')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/WB_DB_DATA')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('AzureDataLakeStorage1')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "DBData.csv",
+						"folderPath": "WB/DB/unpacked/WB_DB.zip",
+						"fileSystem": "dp203-datalakestorage-gen2-filesystem"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "Country Name",
+						"type": "String"
+					},
+					{
+						"name": "Country Code",
+						"type": "String"
+					},
+					{
+						"name": "Indicator Name",
+						"type": "String"
+					},
+					{
+						"name": "Indicator Code",
+						"type": "String"
+					},
+					{
+						"name": "2004",
+						"type": "String"
+					},
+					{
+						"name": "2005",
+						"type": "String"
+					},
+					{
+						"name": "2006",
+						"type": "String"
+					},
+					{
+						"name": "2007",
+						"type": "String"
+					},
+					{
+						"name": "2008",
+						"type": "String"
+					},
+					{
+						"name": "2009",
+						"type": "String"
+					},
+					{
+						"name": "2010",
+						"type": "String"
+					},
+					{
+						"name": "2011",
+						"type": "String"
+					},
+					{
+						"name": "2012",
+						"type": "String"
+					},
+					{
+						"name": "2013",
+						"type": "String"
+					},
+					{
+						"name": "2014",
+						"type": "String"
+					},
+					{
+						"name": "2015",
+						"type": "String"
+					},
+					{
+						"name": "2016",
+						"type": "String"
+					},
+					{
+						"name": "2017",
+						"type": "String"
+					},
+					{
+						"name": "2018",
+						"type": "String"
+					},
+					{
+						"name": "2019",
+						"type": "String"
+					},
+					{
+						"name": "2020",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/src_wb_db_data_avro')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('AzureDataLakeStorage1')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Avro",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "src",
+						"fileSystem": "avro"
+					}
+				},
+				"schema": []
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/wb_db_json')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('AzureDataLakeStorage1')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "src",
+						"fileSystem": "json"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": []
+		}
+	]
+}
